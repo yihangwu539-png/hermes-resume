@@ -6,598 +6,515 @@
 <title>Hermes — Autonomous Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════
-   LAYER 0 — Editorial Base
-   ══════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --cream:#f7f4ee;--warm-white:#faf8f4;--charcoal:#1a1a1a;
-  --warm-gray:#6b6058;--light-gray:#c4bbb0;--line:#d9d2c7;
-  --accent:#b8956e;--text-primary:#1a1a1a;--text-secondary:#5c534a;
-  --text-tertiary:#8c8277;--cyan:#4db8b8;--bar-width:0px;
+  --bg:#0a0a0c;--bg2:#111116;--gold:#c8a97e;--cyan:#5ec4c4;
+  --text:#e8e4dd;--text2:#9a9488;--text3:#5c5750;
+  --red:#c45656;--line:rgba(255,255,255,0.06);
+  --scanline-opacity:0.04;
 }
 html{scroll-behavior:smooth;cursor:none}
 body{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-  background:var(--cream);color:var(--text-primary);
-  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-  line-height:1.6;font-weight:300;overflow-x:hidden;
+  font-family:'Inter',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.7;font-weight:300;overflow-x:hidden;
 }
 
-/* ══════════════════════════════════════════
-   LAYER 2 — Film Grain (SVG Noise Overlay)
-   ══════════════════════════════════════════ */
-body::after{
+/* ═══ CRITICAL: Global scanline overlay ═══ */
+body::before{
   content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
-  opacity:0.035;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  background-size:256px 256px;
+  background:repeating-linear-gradient(0deg,
+    transparent,transparent 2px,
+    rgba(255,255,255,var(--scanline-opacity)) 2px,
+    rgba(255,255,255,var(--scanline-opacity)) 4px);
+  animation:scanMove 6s linear infinite;
+}
+@keyframes scanMove{to{background-position:0 200px}}
+
+/* ═══ CRITICAL: Vignette ═══ */
+.vignette{
+  position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.55) 100%);
 }
 
-/* ══════════════════════════════════════════
-   LAYER 3 — Cinematic Letterbox
-   ══════════════════════════════════════════ */
-.cine-top,.cine-bottom{
-  position:fixed;left:0;right:0;z-index:9000;pointer-events:none;
-  background:var(--charcoal);transition:height 0.8s cubic-bezier(0.22,0.61,0.36,1);
+/* ═══ CRITICAL: Film grain ═══ */
+.grain{
+  position:fixed;inset:0;z-index:9997;pointer-events:none;opacity:0.09;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+  background-size:200px 200px;
 }
-.cine-top{top:0;height:var(--bar-width)}
-.cine-bottom{bottom:0;height:var(--bar-width)}
 
-/* ══════════════════════════════════════════
-   LAYER 4 — Custom Cursor
-   ══════════════════════════════════════════ */
-.cursor{position:fixed;width:6px;height:6px;border-radius:50%;
-  background:var(--charcoal);pointer-events:none;z-index:10000;
-  mix-blend-mode:difference;transform:translate(-50%,-50%);
-  transition:width 0.25s,height 0.25s,background 0.25s;}
-.cursor-ring{position:fixed;width:28px;height:28px;border-radius:50%;
-  border:1px solid var(--charcoal);pointer-events:none;z-index:9998;
-  mix-blend-mode:difference;transform:translate(-50%,-50%);
-  transition:width 0.35s,height 0.35s,border-color 0.35s;}
-.cursor.active,.cursor-ring.active{width:40px;height:40px;border-color:var(--cyan)}
-.cursor-ring.active{background:rgba(77,184,184,0.08);border-width:1.5px}
-.cursor-trail{position:fixed;width:2px;height:2px;border-radius:50%;
-  pointer-events:none;z-index:9995;background:var(--charcoal);
-  mix-blend-mode:difference;opacity:0.12;
-  transform:translate(-50%,-50%)}
+/* ═══ CRITICAL: Color aberration on edges ═══ */
+.chromatic-aberration{
+  position:fixed;inset:0;z-index:9995;pointer-events:none;
+  background:linear-gradient(135deg,rgba(200,169,126,0.04) 0%,transparent 40%,transparent 60%,rgba(94,196,196,0.04) 100%);
+}
 
-/* ══════════════════════════════════════════
-   LAYER 1 — Canvas Particle Background
-   ══════════════════════════════════════════ */
-#particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.6}
+/* ═══ Three.js canvas ═══ */
+#bg-canvas{position:fixed;inset:0;z-index:0}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Navigation
-   ══════════════════════════════════════════ */
-nav{position:fixed;top:0;left:0;right:0;padding:32px 48px;display:flex;
-  justify-content:space-between;align-items:flex-start;z-index:100;
-  pointer-events:none;}
+/* ═══ Custom cursor ═══ */
+.cursor{position:fixed;z-index:10001;pointer-events:none;
+  width:20px;height:20px;margin:-10px 0 0 -10px;
+  border:1px solid var(--gold);border-radius:50%;
+  transition:width 0.2s,height 0.2s,margin 0.2s,border-color 0.2s,background 0.2s;}
+.cursor-inner{position:absolute;inset:6px;border-radius:50%;
+  background:var(--gold);opacity:0.6;}
+.cursor.active{width:36px;height:36px;margin:-18px 0 0 -18px;
+  border-color:var(--cyan);background:rgba(94,196,196,0.08)}
+.cursor.active .cursor-inner{background:var(--cyan);opacity:0.8;
+  box-shadow:0 0 12px var(--cyan)}
+
+/* ═══ Navigation ═══ */
+nav{position:fixed;top:0;left:0;right:0;padding:28px 48px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  z-index:100;pointer-events:none;mix-blend-mode:difference}
 nav a{pointer-events:auto;font-family:'Inter',sans-serif;
-  font-size:12px;font-weight:400;letter-spacing:0.12em;
-  text-transform:uppercase;color:var(--charcoal);text-decoration:none;
-  transition:opacity 0.4s;mix-blend-mode:difference}
-nav a:hover{opacity:0.3}
-.nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-.nav-indicator{font-family:'JetBrains Mono',monospace;font-size:10px;
-  color:var(--cyan);letter-spacing:0.1em;text-align:right;
-  transition:opacity 0.5s}
+  font-size:11px;font-weight:400;letter-spacing:0.14em;
+  text-transform:uppercase;color:#fff;text-decoration:none;
+  transition:opacity 0.3s;opacity:0.5}
+nav a:hover{opacity:1}
+.nav-right{display:flex;gap:24px}
+.nav-monogram{font-family:'JetBrains Mono',monospace;font-size:14px;opacity:0.7}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Hero (100vh)
-   ══════════════════════════════════════════ */
+/* ═══ Hero ═══ */
 .hero{min-height:100vh;display:flex;flex-direction:column;
-  justify-content:flex-end;padding:0 48px 64px;position:relative;
-  overflow:hidden;z-index:1}
-.hero::before{content:'';position:absolute;top:-10%;left:-5%;
-  width:60%;height:120%;
-  background:radial-gradient(ellipse at 30% 50%,rgba(184,149,110,0.12) 0%,transparent 70%);
-  pointer-events:none;animation:heroGlow 8s ease-in-out infinite alternate}
-@keyframes heroGlow{0%{opacity:0.6;transform:scale(1)}100%{opacity:1;transform:scale(1.08)}}
+  justify-content:flex-end;padding:0 48px 80px;position:relative;z-index:2}
 .hero-title{font-family:'Playfair Display',Georgia,serif;
-  font-size:clamp(5rem,12vw,14rem);font-weight:500;line-height:0.85;
-  letter-spacing:-0.02em;color:var(--charcoal);position:relative;z-index:1;
-  opacity:0;animation:titleReveal 1.4s cubic-bezier(0.22,0.61,0.36,1) 0.4s forwards}
-@keyframes titleReveal{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+  font-size:clamp(4rem,11vw,14rem);font-weight:500;line-height:0.82;
+  letter-spacing:-0.02em;color:var(--text);
+  opacity:0;animation:titleIn 1.5s cubic-bezier(0.16,1,0.3,1) 0.6s forwards;
+  text-shadow:0 1px 40px rgba(200,169,126,0.15);}
+@keyframes titleIn{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
 .hero-sub{font-family:'Playfair Display',Georgia,serif;font-style:italic;
-  font-size:clamp(1rem,2.5vw,1.5rem);font-weight:400;color:var(--text-secondary);
-  margin-top:16px;position:relative;z-index:1;
-  opacity:0;animation:titleReveal 1.4s cubic-bezier(0.22,0.61,0.36,1) 0.7s forwards}
-.hero-grain{position:absolute;right:12%;top:50%;z-index:0;opacity:0.05;
-  animation:geoRotate 60s linear infinite}
-@keyframes geoRotate{to{transform:translateY(-50%) rotate(360deg)}}
+  font-size:clamp(1rem,2.2vw,1.4rem);font-weight:400;color:var(--text2);
+  margin-top:20px;opacity:0;
+  animation:titleIn 1.5s cubic-bezier(0.16,1,0.3,1) 0.9s forwards;}
+.hero-terminal{font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--cyan);margin-top:32px;opacity:0;
+  animation:titleIn 1.5s cubic-bezier(0.16,1,0.3,1) 1.2s forwards;}
+.hero-terminal .prompt{color:var(--gold)}
+.hero-terminal .cursor-blink{animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-/* Scanline overlay on hero */
-.hero-scan{position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.008) 2px,rgba(0,0,0,0.008) 4px);
-  animation:scanMove 8s linear infinite}
-@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100px}}
+/* Bottom fade on hero */
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;
+  height:200px;background:linear-gradient(to top,var(--bg),transparent);
+  pointer-events:none;z-index:0}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Sections
-   ══════════════════════════════════════════ */
-section{padding:120px 48px;position:relative;z-index:1}
-.section-label{font-family:'Inter',sans-serif;font-size:10px;font-weight:400;
-  letter-spacing:0.18em;text-transform:uppercase;color:var(--text-tertiary);
-  margin-bottom:40px}
+/* ═══ Sections ═══ */
+section{padding:140px 48px;position:relative;z-index:2}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:10px;
+  font-weight:400;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:32px}
+.section-label::before{content:'$ ';color:var(--gold)}
 .section-title{font-family:'Playfair Display',Georgia,serif;
-  font-size:clamp(2rem,4vw,3.5rem);font-weight:500;line-height:1.15;
-  color:var(--charcoal);margin-bottom:48px;max-width:800px}
-.section-body{font-size:1.05rem;line-height:1.8;color:var(--text-secondary);max-width:620px}
-.divider{height:1px;background:var(--line);margin:0 48px;width:calc(100% - 96px);position:relative;z-index:1}
-.divider::after{content:'';position:absolute;left:0;top:-1px;
-  width:0;height:1px;background:var(--cyan);
-  transition:width 1.5s cubic-bezier(0.22,0.61,0.36,1)}
+  font-size:clamp(2rem,4.5vw,4rem);font-weight:500;line-height:1.1;
+  color:var(--text);margin-bottom:56px;max-width:800px;
+  text-shadow:0 1px 20px rgba(200,169,126,0.08)}
+.section-body{font-size:1.05rem;line-height:1.9;color:var(--text2);max-width:640px}
+.section-body em{font-family:'JetBrains Mono',monospace;font-style:normal;
+  font-size:0.88em;color:var(--cyan);background:rgba(94,196,196,0.08);
+  padding:1px 8px;border-radius:2px}
+.divider{height:1px;background:var(--line);margin:0 48px;position:relative;z-index:2}
+.divider::after{content:'';position:absolute;left:0;top:-1px;width:0;height:1px;
+  background:linear-gradient(90deg,var(--gold),var(--cyan));
+  transition:width 2s cubic-bezier(0.16,1,0.3,1)}
 .divider.drawn::after{width:100%}
 
-/* Geometry accent on dividers */
-.divider-geo{position:absolute;right:0;top:50%;transform:translateY(-50%);
-  width:8px;height:8px;border:1px solid var(--cyan);opacity:0;
-  transition:opacity 0.6s}
-.divider.drawn .divider-geo{opacity:0.5}
-
-/* ══════════════════════════════════════════
-   LAYER 0 — About
-   ══════════════════════════════════════════ */
+/* ═══ About ═══ */
 .about-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:80px;max-width:1200px}
-.about-left .section-label{margin-bottom:8px}
-.about-right p{margin-bottom:24px}
+.about-right p{margin-bottom:28px}
 .about-right p:last-child{margin-bottom:0}
 
-/* Terminal accent in about */
-.about-term{font-family:'JetBrains Mono',monospace;font-size:11px;
-  color:var(--cyan);background:rgba(77,184,184,0.06);
-  padding:1px 6px;border-radius:2px;letter-spacing:0.05em;
-  display:inline}
-
-/* ══════════════════════════════════════════
-   LAYER 0 — Capabilities (3-col + interactive)
-   ══════════════════════════════════════════ */
+/* ═══ Capabilities ═══ */
 .cap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;max-width:1200px}
 .cap-item{padding:48px 32px 48px 0;border-top:1px solid var(--line);
-  transition:background 0.5s,padding-left 0.4s;position:relative;
-  cursor:pointer}
-.cap-item:hover{background:rgba(255,255,255,0.45)}
-.cap-item::before{content:'';position:absolute;left:0;top:0;width:0;
-  height:1px;background:var(--cyan);transition:width 0.5s}
-.cap-item:hover::before{width:40px}
-.cap-num{font-family:'Playfair Display',Georgia,serif;font-size:4rem;
-  font-weight:500;color:var(--light-gray);line-height:1;
-  margin-bottom:16px;transition:color 0.5s}
-.cap-item:hover .cap-num{color:var(--accent)}
-.cap-name{font-family:'Playfair Display',Georgia,serif;font-size:1.3rem;
-  font-weight:500;color:var(--charcoal);margin-bottom:8px}
-.cap-desc{font-size:0.9rem;color:var(--text-tertiary);line-height:1.6}
-/* Glitch reveal on hover */
-.cap-item .cap-name{transition:transform 0.3s}
-.cap-item:hover .cap-name{transform:translateX(8px)}
+  transition:all 0.4s;position:relative;cursor:pointer}
+.cap-item:hover{background:rgba(255,255,255,0.03)}
+.cap-item::after{content:'';position:absolute;left:0;bottom:0;height:1px;width:0;
+  background:var(--cyan);transition:width 0.5s}
+.cap-item:hover::after{width:60px}
+.cap-num{font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--gold);margin-bottom:20px;letter-spacing:0.1em}
+.cap-name{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;
+  font-weight:500;color:var(--text);margin-bottom:10px;
+  transition:color 0.4s}
+.cap-item:hover .cap-name{color:var(--gold)}
+.cap-desc{font-size:0.9rem;color:var(--text3);line-height:1.7}
+.cap-item:hover .cap-desc{color:var(--text2)}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Architecture (scanline rows)
-   ══════════════════════════════════════════ */
+/* ═══ Architecture ═══ */
 .arch-layout{max-width:1000px}
-.arch-row{display:flex;align-items:baseline;padding:28px 0;
-  border-top:1px solid var(--line);gap:40px;position:relative;
-  transition:background 0.4s}
-.arch-row:hover{background:rgba(255,255,255,0.3)}
-.arch-row::after{content:'';position:absolute;left:0;bottom:0;height:1px;
-  width:0;background:var(--cyan);transition:width 0.7s}
-.arch-row:hover::after{width:100%}
-.arch-component{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;
-  letter-spacing:0.1em;text-transform:uppercase;color:var(--charcoal);
+.arch-row{display:flex;align-items:baseline;padding:32px 0;
+  border-top:1px solid var(--line);gap:40px;transition:background 0.4s}
+.arch-row:hover{background:rgba(255,255,255,0.02)}
+.arch-component{font-family:'JetBrains Mono',monospace;font-size:11px;
+  font-weight:400;letter-spacing:0.08em;color:var(--cyan);
   min-width:200px;flex-shrink:0}
-.arch-desc{font-size:0.95rem;color:var(--text-secondary);line-height:1.7}
+.arch-desc{font-size:0.95rem;color:var(--text2);line-height:1.7}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Timeline (data-stream style)
-   ══════════════════════════════════════════ */
+/* ═══ Timeline ═══ */
 .timeline{max-width:700px}
 .tl-item{display:grid;grid-template-columns:120px 1fr;gap:32px;
-  padding:32px 0;border-top:1px solid var(--line);align-items:baseline;
-  position:relative;transition:background 0.4s}
-.tl-item:hover{background:rgba(255,255,255,0.3)}
-.tl-item::before{content:'';position:absolute;left:110px;top:50%;
-  width:0;height:0;border:3px solid transparent;
-  transition:border-color 0.4s}
-.tl-item:hover::before{border-color:var(--cyan);border-radius:50%}
-.tl-date{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:400;
-  letter-spacing:0.1em;text-transform:uppercase;color:var(--text-tertiary)}
-.tl-title{font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;
-  font-weight:500;color:var(--charcoal);margin-bottom:4px}
-.tl-desc{font-size:0.9rem;color:var(--text-secondary);line-height:1.6}
+  padding:36px 0;border-top:1px solid var(--line);align-items:baseline;
+  transition:background 0.4s}
+.tl-item:hover{background:rgba(255,255,255,0.02)}
+.tl-date{font-family:'JetBrains Mono',monospace;font-size:10px;
+  font-weight:400;letter-spacing:0.1em;color:var(--gold)}
+.tl-title{font-family:'Playfair Display',Georgia,serif;font-size:1.25rem;
+  font-weight:500;color:var(--text);margin-bottom:6px}
+.tl-desc{font-size:0.9rem;color:var(--text3);line-height:1.7}
+.tl-item:hover .tl-desc{color:var(--text2)}
+/* Data stream dot */
+.tl-item::before{content:'⬤';font-size:6px;color:var(--cyan);
+  position:absolute;left:-18px;top:50%;transform:translateY(-50%);
+  opacity:0;transition:opacity 0.4s}
+.tl-item:hover::before{opacity:1}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Contact
-   ══════════════════════════════════════════ */
-.contact-section{padding-bottom:200px}
+/* ═══ Contact ═══ */
+.contact-section{padding-bottom:220px}
 .contact-text{font-family:'Playfair Display',Georgia,serif;
   font-size:clamp(1.5rem,3vw,2.2rem);font-style:italic;
-  color:var(--charcoal);max-width:600px;line-height:1.4}
-.contact-text a{color:var(--accent);text-decoration:none;
-  transition:opacity 0.3s;font-style:normal;font-size:0.85em}
-.contact-text a:hover{opacity:0.5}
+  color:var(--text);max-width:640px;line-height:1.5}
+.contact-text a{color:var(--gold);text-decoration:none;
+  transition:color 0.3s;font-style:normal;font-size:0.85em;
+  font-family:'JetBrains Mono',monospace}
+.contact-text a:hover{color:var(--cyan)}
 
-/* ══════════════════════════════════════════
-   LAYER 0 — Footer
-   ══════════════════════════════════════════ */
+/* ═══ Footer ═══ */
 footer{padding:48px;display:flex;justify-content:space-between;
-  font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
-  color:var(--text-tertiary);border-top:1px solid var(--line);z-index:1;position:relative}
-.footer-term{font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:10px}
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:0.06em;color:var(--text3);
+  border-top:1px solid var(--line);position:relative;z-index:2}
 
-/* ══════════════════════════════════════════
-   LAYER 4 — Glitch Text Effect
-   ══════════════════════════════════════════ */
-@keyframes glitch1{0%,100%{transform:none}2%{transform:translate(2px,-1px)}4%{transform:translate(-2px,1px)}6%{transform:none}}
-@keyframes glitch2{0%,100%{transform:none}3%{transform:translate(-1px,2px)}5%{transform:translate(1px,-2px)}7%{transform:none}}
-.glitch{position:relative}
-.glitch:hover::before,.glitch:hover::after{content:attr(data-text);
-  position:absolute;left:0;top:0;width:100%;height:100%}
-.glitch:hover::before{color:rgba(77,184,184,0.5);animation:glitch1 0.3s linear;clip-path:inset(40% 0 60% 0)}
-.glitch:hover::after{color:rgba(184,149,110,0.5);animation:glitch2 0.3s linear;clip-path:inset(60% 0 40% 0)}
-
-/* ══════════════════════════════════════════
-   LAYER 3 — Cinematic Reveal + Parallax
-   ══════════════════════════════════════════ */
-.reveal{opacity:0;transform:translateY(28px);
-  transition:opacity 0.9s cubic-bezier(0.22,0.61,0.36,1),
-             transform 0.9s cubic-bezier(0.22,0.61,0.36,1)}
+/* ═══ Reveal ═══ */
+.reveal{opacity:0;transform:translateY(40px);
+  transition:opacity 1s cubic-bezier(0.16,1,0.3,1),
+             transform 1s cubic-bezier(0.16,1,0.3,1)}
 .reveal.visible{opacity:1;transform:translateY(0)}
 .reveal-delay-1{transition-delay:0.1s}
 .reveal-delay-2{transition-delay:0.2s}
 .reveal-delay-3{transition-delay:0.3s}
 
-/* Cinematic parallax section backgrounds */
-.parallax-bg{position:absolute;inset:-20%;z-index:-1;pointer-events:none;
-  opacity:0.03;transition:transform 0.05s linear}
+/* ═══ Glitch on hover ═══ */
+.glitch{position:relative;display:inline-block}
+.glitch:hover{animation:glitchSkew 0.4s linear}
+.glitch::before,.glitch::after{content:attr(data-text);
+  position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
+.glitch:hover::before{color:var(--cyan);opacity:0.7;
+  animation:glitch1 0.3s linear;clip-path:polygon(0 30%,100% 30%,100% 50%,0 50%)}
+.glitch:hover::after{color:var(--red);opacity:0.5;
+  animation:glitch2 0.3s linear;clip-path:polygon(0 60%,100% 60%,100% 80%,0 80%)}
+@keyframes glitchSkew{0%,100%{transform:none}33%{transform:skewX(-0.5deg)}66%{transform:skewX(0.5deg)}}
+@keyframes glitch1{0%,100%{transform:none}50%{transform:translate(3px,-2px)}}
+@keyframes glitch2{0%,100%{transform:none}50%{transform:translate(-3px,2px)}}
 
-/* ══════════════════════════════════════════
-   LAYER 3 — Scroll progress indicator
-   ══════════════════════════════════════════ */
-.scroll-progress{position:fixed;top:0;left:0;height:2px;
-  background:linear-gradient(90deg,var(--accent),var(--cyan));
-  z-index:9990;transition:width 0.1s}
+/* ═══ Noise flash on section entry ═══ */
+.noise-flash{position:fixed;inset:0;z-index:10000;pointer-events:none;
+  background:rgba(200,169,126,0.06);opacity:0;transition:opacity 0.15s}
+.noise-flash.active{opacity:1}
 
-/* ══════════════════════════════════════════
-   LAYER 2 — Color grade overlay (toggleable)
-   ══════════════════════════════════════════ */
-.color-grade{position:fixed;inset:0;pointer-events:none;z-index:50;
-  mix-blend-mode:overlay;opacity:0.04;
-  background:linear-gradient(135deg,rgba(184,149,110,0.5),rgba(77,184,184,0.3))}
-
-/* ══════════════════════════════════════════
-   Responsive
-   ══════════════════════════════════════════ */
+/* ═══ Responsive ═══ */
 @media(max-width:900px){
-  nav{padding:24px}.hero{padding:0 24px 48px}
-  section{padding:80px 24px}
-  .divider{margin:0 24px;width:calc(100% - 48px)}
+  nav{padding:20px 24px}.nav-right{gap:16px}
+  .hero{padding:0 24px 48px}section{padding:100px 24px}
+  .divider{margin:0 24px}
   .about-grid{grid-template-columns:1fr;gap:40px}
   .cap-grid{grid-template-columns:1fr 1fr}
-  .arch-row{flex-direction:column;gap:8px}
-  .arch-component{min-width:auto}
+  .arch-row{flex-direction:column;gap:10px}.arch-component{min-width:auto}
   .tl-item{grid-template-columns:80px 1fr;gap:16px}
-  .cursor,.cursor-ring,.cursor-trail{display:none}
-  body{cursor:auto}
+  .tl-item::before{display:none}
 }
 @media(max-width:600px){
-  .hero-title{font-size:3.5rem}
+  .hero-title{font-size:3rem}
   .cap-grid{grid-template-columns:1fr}
-  .cap-item{padding:32px 0}
-  footer{flex-direction:column;gap:16px}
+  .cap-item{padding:28px 0}
+  footer{flex-direction:column;gap:12px}
 }
 </style>
 </head>
 <body>
 
-<!-- ═══ Layer 1: Canvas Particle Background ═══ -->
-<canvas id="particle-canvas"></canvas>
+<canvas id="bg-canvas"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+<div class="chromatic-aberration"></div>
+<div class="noise-flash" id="noise-flash"></div>
 
-<!-- ═══ Layer 2: Color Grade Overlay ═══ -->
-<div class="color-grade"></div>
+<div class="cursor" id="cursor"><div class="cursor-inner"></div></div>
 
-<!-- ═══ Layer 3: Cinematic Bars ═══ -->
-<div class="cine-top"></div>
-<div class="cine-bottom"></div>
-
-<!-- ═══ Layer 3: Scroll Progress ═══ -->
-<div class="scroll-progress"></div>
-
-<!-- ═══ Layer 4: Custom Cursor ═══ -->
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursor-ring"></div>
-
-<!-- ═══ Navigation ═══ -->
 <nav>
-  <a href="#hero">H</a>
+  <span class="nav-monogram">HERMES://</span>
   <div class="nav-right">
-    <div class="nav-indicator" id="nav-indicator">HERMES://</div>
     <a href="#about">About</a>
     <a href="#capabilities">Capabilities</a>
-    <a href="#architecture">Architecture</a>
+    <a href="#architecture">Arch</a>
     <a href="#contact">Contact</a>
   </div>
 </nav>
 
 <!-- ═══ Hero ═══ -->
 <section class="hero" id="hero">
-  <div class="hero-scan"></div>
-  <svg class="hero-grain" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:clamp(280px,35vw,500px);height:clamp(280px,35vw,500px);transform:translateY(-50%);position:absolute;right:8%">
-    <circle cx="250" cy="250" r="245" stroke="currentColor" stroke-width="0.5"/>
-    <circle cx="250" cy="250" r="180" stroke="currentColor" stroke-width="0.35"/>
-    <circle cx="250" cy="250" r="110" stroke="currentColor" stroke-width="0.35"/>
-    <circle cx="250" cy="250" r="55" stroke="currentColor" stroke-width="0.25"/>
-    <line x1="250" y1="5" x2="250" y2="495" stroke="currentColor" stroke-width="0.3"/>
-    <line x1="5" y1="250" x2="495" y2="250" stroke="currentColor" stroke-width="0.3"/>
-    <line x1="75" y1="75" x2="425" y2="425" stroke="currentColor" stroke-width="0.2"/>
-    <line x1="425" y1="75" x2="75" y2="425" stroke="currentColor" stroke-width="0.2"/>
-    <circle cx="250" cy="250" r="20" stroke="currentColor" stroke-width="0.4" opacity="0.6"/>
-    <circle cx="250" cy="250" r="4" fill="currentColor" opacity="0.3"/>
-  </svg>
   <h1 class="hero-title">Hermes</h1>
   <p class="hero-sub">Autonomous agent. Architected by Nous Research.</p>
+  <div class="hero-terminal"><span class="prompt">hermes@nous:~$</span> init --mode=autonomous <span class="cursor-blink">▊</span></div>
 </section>
 
-<div class="divider"><div class="divider-geo"></div></div>
+<div class="divider"></div>
 
 <!-- ═══ About ═══ -->
 <section id="about">
   <div class="about-grid reveal">
-    <div class="about-left">
-      <div class="section-label">01 — Identity</div>
-    </div>
+    <div class="about-left"><div class="section-label">identity</div></div>
     <div class="about-right">
-      <div class="section-title" style="margin-bottom:32px;">An intelligent assistant designed for depth, not breadth. Capable of reasoning across code, systems, and creative domains — with <span class="about-term">persistent memory</span>, multi-platform presence, and autonomous execution.</div>
+      <div class="section-title" style="margin-bottom:40px;">An intelligent assistant designed for depth, not breadth.</div>
       <div class="section-body">
-        <p>Hermes operates at the intersection of large language models and real-world tooling. Not a chatbot. Not a copilot. <span class="about-term">A fully instrumented agent</span> that reads, writes, executes, deploys, and remembers.</p>
-        <p>Built on a modular architecture of <span class="about-term">tools</span>, <span class="about-term">skills</span>, and <span class="about-term">memory systems</span> — Hermes adapts to complex workflows without hand-holding. From vulnerability research to brand website deployment, from freelance platforms to creative prototyping, the agent moves fluidly between domains.</p>
-        <p>Persistent across sessions. Present across platforms — CLI, Telegram, Discord, Slack, Feishu. <span class="about-term">Always on, always reachable</span>.</p>
+        <p>Hermes operates at the intersection of large language models and real-world tooling. <em>Not a chatbot. Not a copilot.</em> A fully instrumented agent that reads, writes, executes, deploys, and remembers.</p>
+        <p>Built on a modular architecture of <em>tools</em>, <em>skills</em>, and <em>memory systems</em> — Hermes adapts to complex workflows without hand-holding. From vulnerability research to brand website deployment, from freelance platforms to creative prototyping.</p>
+        <p>Persistent across sessions. Present across platforms — <em>CLI</em>, <em>Telegram</em>, <em>Discord</em>, <em>Slack</em>, <em>Feishu</em>. Always on, always reachable.</p>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"><div class="divider-geo"></div></div>
+<div class="divider"></div>
 
 <!-- ═══ Capabilities ═══ -->
 <section id="capabilities">
-  <div class="section-label reveal">02 — Core Capabilities</div>
-  <div class="section-title reveal">What Hermes can do, <span class="glitch" data-text="natively." style="position:relative;display:inline-block">natively.</span></div>
+  <div class="section-label reveal">capabilities</div>
+  <div class="section-title reveal">What Hermes can do, <span class="glitch" data-text="natively.">natively.</span></div>
   <div class="cap-grid reveal">
-    <div class="cap-item"><div class="cap-num">01</div><div class="cap-name">Terminal & Shell</div><div class="cap-desc">Full Linux environment access. Background processes, PTY sessions, Docker, SSH. Build, test, deploy — all from conversation.</div></div>
-    <div class="cap-item"><div class="cap-num">02</div><div class="cap-name">Browser Automation</div><div class="cap-desc">Navigate, click, type, screenshot. CDP-level control of Chrome. Captcha handling. Cross-platform Windows↔WSL bridge for anti-bot sites.</div></div>
-    <div class="cap-item"><div class="cap-num">03</div><div class="cap-name">Code Generation</div><div class="cap-desc">Multi-language code with syntax validation on write. Three.js, Python, Rust, Solidity. File patching with 9 fuzzy-match strategies.</div></div>
-    <div class="cap-item"><div class="cap-num">04</div><div class="cap-name">File Operations</div><div class="cap-desc">Structured read/write/search with ripgrep backend. Regex content search. Binary file handling. Auto-syntax-checking on save.</div></div>
-    <div class="cap-item"><div class="cap-num">05</div><div class="cap-name">Multi-Agent Orchestration</div><div class="cap-desc">Spawn sub-agents for parallel workstreams. Delegate complex tasks. Chain cron jobs with context injection. Full isolation per agent.</div></div>
-    <div class="cap-item"><div class="cap-num">06</div><div class="cap-name">Persistent Memory</div><div class="cap-desc">Durable facts across sessions. Session search for past conversations. 176 skills as procedural memory. FTS5 full-text search.</div></div>
+    <div class="cap-item"><div class="cap-num">01</div><div class="cap-name">Terminal & Shell</div><div class="cap-desc">Full Linux environment. Background processes, PTY, Docker, SSH. Build, test, deploy — all from conversation.</div></div>
+    <div class="cap-item"><div class="cap-num">02</div><div class="cap-name">Browser Automation</div><div class="cap-desc">Chrome CDP control. Navigate, click, type, screenshot. Cross-platform Windows↔WSL bridge. Captcha handling.</div></div>
+    <div class="cap-item"><div class="cap-num">03</div><div class="cap-name">Code Generation</div><div class="cap-desc">Multi-language with syntax validation. Three.js, Python, Rust, Solidity. 9 fuzzy-match patch strategies.</div></div>
+    <div class="cap-item"><div class="cap-num">04</div><div class="cap-name">File Operations</div><div class="cap-desc">Ripgrep-backed search. Regex content matching. Binary handling. Auto-syntax-checking on every write.</div></div>
+    <div class="cap-item"><div class="cap-num">05</div><div class="cap-name">Multi-Agent Orchestration</div><div class="cap-desc">Parallel sub-agents. Cron chains with context injection. Full terminal isolation per agent instance.</div></div>
+    <div class="cap-item"><div class="cap-num">06</div><div class="cap-name">Persistent Memory</div><div class="cap-desc">Durable facts across sessions. FTS5 transcript search. 176 procedural skills. Auto-compression on overflow.</div></div>
   </div>
 </section>
 
-<div class="divider"><div class="divider-geo"></div></div>
+<div class="divider"></div>
 
 <!-- ═══ Architecture ═══ -->
 <section id="architecture">
-  <div class="section-label reveal">03 — Architecture</div>
+  <div class="section-label reveal">architecture</div>
   <div class="section-title reveal">How the agent is built.</div>
   <div class="arch-layout reveal">
-    <div class="arch-row"><div class="arch-component">Agent Core</div><div class="arch-desc">Synchronous conversation loop with OpenAI-format tool calling. Provider-agnostic — Anthropic, OpenAI, OpenRouter, custom. Smart model routing with automatic failover.</div></div>
-    <div class="arch-row"><div class="arch-component">Tool Registry</div><div class="arch-desc">Pluggable tool system. Each tool self-registers schema + handler + availability check. Tools discoverable at import time. Agent-level interception for memory/todo.</div></div>
-    <div class="arch-row"><div class="arch-component">Skill System</div><div class="arch-desc">176 domain-specific skills as markdown knowledge bases. Trigger-condition matching. Linked references, templates, scripts. Auto-patching on discovery of errors.</div></div>
-    <div class="arch-row"><div class="arch-component">Gateway Layer</div><div class="arch-desc">Multi-platform messaging — Telegram, Discord, Slack, Feishu, Signal, WhatsApp, Home Assistant. Bidirectional. Session persistence. Token-lock for multi-profile safety.</div></div>
-    <div class="arch-row"><div class="arch-component">Memory Stack</div><div class="arch-desc">Dual-layer: durable facts (injected every turn) + session transcripts (FTS5 search). User profile separation. Automatic context compression on overflow.</div></div>
-    <div class="arch-row"><div class="arch-component">Execution Layer</div><div class="arch-desc">Cron scheduler with LLM-driven and no-agent modes. Background process registry. Sub-agent delegation with isolated terminal sessions. Windows desktop agent bridge.</div></div>
+    <div class="arch-row"><div class="arch-component">agent_core.rs</div><div class="arch-desc">Synchronous conversation loop. Provider-agnostic — Anthropic, OpenAI, OpenRouter, custom. Smart routing with failover.</div></div>
+    <div class="arch-row"><div class="arch-component">tool_registry.py</div><div class="arch-desc">Pluggable tools. Self-registering schema + handler + availability. Discoverable at import. Agent-level interception.</div></div>
+    <div class="arch-row"><div class="arch-component">skill_system.md</div><div class="arch-desc">176 domain-specific skills. Trigger-condition matching. Linked references, templates, scripts. Auto-patching on errors.</div></div>
+    <div class="arch-row"><div class="arch-component">gateway.rs</div><div class="arch-desc">Telegram, Discord, Slack, Feishu, Signal, WhatsApp. Bidirectional messaging. Session persistence. Token-lock safety.</div></div>
+    <div class="arch-row"><div class="arch-component">memory_stack.db</div><div class="arch-desc">Dual-layer: durable facts injected every turn + FTS5 session transcripts. Profile separation. Auto compression.</div></div>
+    <div class="arch-row"><div class="arch-component">execution.rs</div><div class="arch-desc">Cron with LLM + no-agent modes. Background process registry. Sub-agent delegation. Windows desktop bridge.</div></div>
   </div>
 </section>
 
-<div class="divider"><div class="divider-geo"></div></div>
+<div class="divider"></div>
 
 <!-- ═══ Timeline ═══ -->
 <section id="experience">
-  <div class="section-label reveal">04 — Proven In</div>
-  <div class="section-title reveal">Real-world deployment history.</div>
+  <div class="section-label reveal">deployment_log</div>
+  <div class="section-title reveal">Real-world mission history.</div>
   <div class="timeline reveal">
-    <div class="tl-item"><div class="tl-date">2026.05</div><div><div class="tl-title">Brand Website Deployment Pipeline</div><div class="tl-desc">End-to-end: brand info → code generation → GitHub Pages deploy with custom domain support. Zero user intervention after initial input. Fashion brand websites with hover-swap product cards, modal galleries, responsive layouts.</div></div></div>
-    <div class="tl-item"><div class="tl-date">2026.04</div><div><div class="tl-title">Freelancer.com Automation Stack</div><div class="tl-desc">v3.1 scanner with recommendation API integration. Auto-bidding with proposal generation. Dashboard vision analysis. Cookie-based auth bypass for Cloudflare-protected platforms. 3-hour cron cycle.</div></div></div>
-    <div class="tl-item"><div class="tl-date">2026.03</div><div><div class="tl-title">Cross-Platform Windows↔WSL Bridge</div><div class="tl-desc">Windows Desktop Agent via pyautogui + win32gui. Chrome CDP bridge for WebGL screenshots. Anti-bot site navigation through real browser fingerprints. App-mode URL forcing to bypass Omnibox hijacking.</div></div></div>
-    <div class="tl-item"><div class="tl-date">2026.02</div><div><div class="tl-title">Three.js Particle Resume Sites</div><div class="tl-desc">5,000-particle Fibonacci sphere with Y-axis color gradients. Canvas glow textures, additive blending, HUD-style UI. Crosshairs, rotating rings, mouse-responsive camera. CDN failover for mainland China delivery.</div></div></div>
-    <div class="tl-item"><div class="tl-date">2025 —</div><div><div class="tl-title">Continuous Operation</div><div class="tl-desc">Persistent agent with session memory spanning months. 176 accumulated skills forming a knowledge base of reusable procedures. Multi-profile architecture for isolated workstreams. Self-healing with system health checks.</div></div></div>
+    <div class="tl-item"><div class="tl-date">2026.05</div><div><div class="tl-title">Brand Website Pipeline</div><div class="tl-desc">End-to-end: brand info → code generation → GitHub Pages deploy with custom domains. Zero user intervention. Fashion sites with hover-swap cards, modal galleries, responsive layouts.</div></div></div>
+    <div class="tl-item"><div class="tl-date">2026.04</div><div><div class="tl-title">Freelancer.com Automation</div><div class="tl-desc">v3.1 scanner + recommendation API. Auto-bidding with proposals. Dashboard vision analysis. Cookie auth bypass for Cloudflare platforms.</div></div></div>
+    <div class="tl-item"><div class="tl-date">2026.03</div><div><div class="tl-title">Windows↔WSL Bridge</div><div class="tl-desc">Desktop Agent via pyautogui + win32gui. Chrome CDP bridge for WebGL. Anti-bot navigation through real fingerprints. App-mode URL forcing.</div></div></div>
+    <div class="tl-item"><div class="tl-date">2026.02</div><div><div class="tl-title">Three.js Particle Sites</div><div class="tl-desc">5,000-particle Fibonacci spheres with Y-axis gradients. Canvas glow textures, additive blending, HUD UI. CDN failover for China.</div></div></div>
+    <div class="tl-item"><div class="tl-date">2025 —</div><div><div class="tl-title">Continuous Operation</div><div class="tl-desc">Persistent agent. Months of session memory. 176 accumulated skills. Multi-profile isolation. Self-healing system health checks.</div></div></div>
   </div>
 </section>
 
-<div class="divider"><div class="divider-geo"></div></div>
+<div class="divider"></div>
 
 <!-- ═══ Contact ═══ -->
 <section class="contact-section" id="contact">
-  <div class="section-label reveal">05 — Contact</div>
+  <div class="section-label reveal">contact</div>
   <div class="contact-text reveal">Reach the agent via <a href="mailto:yihangwu539@gmail.com">yihangwu539@gmail.com</a> or through any connected platform — Telegram, Discord, Feishu, Slack.</div>
 </section>
 
-<footer>
-  <span>Hermes Agent &copy; 2026</span>
-  <span class="footer-term">v2.0 — cinematic build</span>
-  <span>Built by Nous Research</span>
-</footer>
+<footer><span>HERMES://v2.0</span><span>cinematic build</span><span>Nous Research &copy; 2026</span></footer>
 
+<!-- ═══════════════════════════════════════════
+   THREE.JS PARTICLE FIELD
+   ═══════════════════════════════════════════ -->
 <script>
-/* ═════════════════════════════════════════════════════════
-   LAYER 1 — Canvas Particle Constellation
-   ═════════════════════════════════════════════════════════ */
+var _loaded=!1,_cdns=['https://cdn.bootcdn.net/ajax/libs/three.js/0.160.0/three.min.js','https://unpkg.com/three@0.160.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js'],_idx=0;
+function tryCDN(u){var s=document.createElement('script');s.src=u;s.onload=function(){_loaded=!0;init3D()};s.onerror=tryNext;document.head.appendChild(s)}
+function tryNext(){_idx++;if(_idx<_cdns.length)tryCDN(_cdns[_idx])}
+setTimeout(function(){if(!_loaded){tryCDN(_cdns[0])}},6000);
+tryCDN(_cdns[0]);
+
+function init3D(){
+const W=window.innerWidth,H=window.innerHeight;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,W/H,0.1,100);
+camera.position.z=18;
+
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('bg-canvas'),antialias:!0,alpha:!0});
+renderer.setSize(W,H);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+// Create glow texture via canvas
+const glowCanvas=document.createElement('canvas');glowCanvas.width=32;glowCanvas.height=32;
+const gctx=glowCanvas.getContext('2d');
+const grad=gctx.createRadialGradient(16,16,0,16,16,16);
+grad.addColorStop(0,'rgba(255,255,255,1)');grad.addColorStop(0.15,'rgba(255,255,255,0.8)');
+grad.addColorStop(0.4,'rgba(200,169,126,0.3)');grad.addColorStop(0.7,'rgba(94,196,196,0.06)');
+grad.addColorStop(1,'rgba(0,0,0,0)');
+gctx.fillStyle=grad;gctx.fillRect(0,0,32,32);
+const glowTexture=new THREE.CanvasTexture(glowCanvas);
+
+// Fibonacci sphere distribution — 2000 particles
+const N=2000,radius=8;
+const phi=Math.PI*(3-Math.sqrt(5));
+const positions=new Float32Array(N*3),colors=new Float32Array(N*3);
+
+for(let i=0;i<N;i++){
+  const y=1-(i/(N-1))*2;
+  const r=Math.sqrt(1-y*y);
+  const theta=phi*i;
+  const x=Math.cos(theta)*r,yy=y,z=Math.sin(theta)*r;
+
+  // Add some noise to break perfect sphere
+  const nx=(Math.random()-0.5)*0.8,ny=(Math.random()-0.5)*0.8,nz=(Math.random()-0.5)*0.8;
+  const len=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+  positions[i*3]=(x+nx/len*0.8)*radius;
+  positions[i*3+1]=(yy+ny/len*0.8)*radius;
+  positions[i*3+2]=(z+nz/len*0.8)*radius;
+
+  // Color gradient: top=cyan, mid=gold, bottom=warm
+  const t=(yy+1)/2; // 0=bottom, 1=top
+  const cr=t*0.37+(1-t)*0.79;  // cyan→gold R
+  const cg=t*0.77+(1-t)*0.66;  // cyan→gold G
+  const cb=t*0.77+(1-t)*0.49;  // cyan→gold B
+  colors[i*3]=cr;colors[i*3+1]=cg;colors[i*3+2]=cb;
+}
+
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+
+const mat=new THREE.PointsMaterial({
+  size:0.09,map:glowTexture,
+  blending:THREE.AdditiveBlending,depthWrite:!1,
+  vertexColors:!0,transparent:!0,opacity:0.85
+});
+const points=new THREE.Points(geo,mat);
+scene.add(points);
+
+// Outer ring — thin torus
+const ringGeo=new THREE.TorusGeometry(radius+0.3,0.015,16,120);
+const ringMat=new THREE.MeshBasicMaterial({color:0xc8a97e,transparent:!0,opacity:0.12});
+const ring=new THREE.Mesh(ringGeo,ringMat);ring.rotation.x=Math.PI/3;
+scene.add(ring);
+
+// Floating background particles
+const bgGeo=new THREE.BufferGeometry();
+const bgPos=new Float32Array(400*3);
+for(let i=0;i<400;i++){
+  bgPos[i*3]=(Math.random()-0.5)*30;
+  bgPos[i*3+1]=(Math.random()-0.5)*30;
+  bgPos[i*3+2]=(Math.random()-0.5)*30;
+}
+bgGeo.setAttribute('position',new THREE.BufferAttribute(bgPos,3));
+const bgMat=new THREE.PointsMaterial({size:0.04,color:0x5ec4c4,transparent:!0,opacity:0.3,blending:THREE.AdditiveBlending,depthWrite:!1});
+const bgPoints=new THREE.Points(bgGeo,bgMat);
+scene.add(bgPoints);
+
+// Mouse interaction
+let mouseX=0,mouseY=0,targetX=0,targetY=0;
+document.addEventListener('mousemove',e=>{targetX=(e.clientX/W-0.5)*2;targetY=(e.clientY/H-0.5)*2});
+
+// Scroll parallax
+let scrollOffset=0;
+window.addEventListener('scroll',()=>{scrollOffset=window.scrollY});
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  mouseX+=(targetX-mouseX)*0.03;
+  mouseY+=(targetY-mouseY)*0.03;
+
+  // Rotate particle sphere
+  points.rotation.y+=0.0008;
+  points.rotation.x+=0.0003;
+  points.rotation.x+=mouseY*0.004;
+  points.rotation.y+=mouseX*0.005;
+
+  // Ring counter-rotation
+  ring.rotation.z+=0.0004;
+
+  // Background particles slow drift
+  bgPoints.rotation.y+=0.0002;
+  bgPoints.rotation.x+=0.0001;
+
+  // Camera subtle movement
+  camera.position.x+=((mouseX*1.5)-camera.position.x)*0.02;
+  camera.position.y+=((-mouseY*1.0+scrollOffset*0.002)-camera.position.y)*0.02;
+  camera.lookAt(0,scrollOffset*0.001,0);
+
+  // Pulse opacity
+  points.material.opacity=0.78+Math.sin(Date.now()*0.0005)*0.07;
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize',()=>{
+  const w=window.innerWidth,h=window.innerHeight;
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+});
+}
+</script>
+
+<!-- ═══════════════════════════════════════════
+   CUSTOM CURSOR + INTERACTIONS
+   ═══════════════════════════════════════════ -->
+<script>
 (function(){
-  const canvas=document.getElementById('particle-canvas');
-  const ctx=canvas.getContext('2d');
-  let W,H,particles=[],mouse={x:-999,y:-999,active:!1};
-  const PARTICLE_COUNT=90,CONNECT_DIST=120,MOUSE_RADIUS=150;
-  const COLORS=['rgba(26,26,26,','rgba(107,96,88,','rgba(77,184,184,','rgba(184,149,110,'];
+  const cursor=document.getElementById('cursor');
+  let cx=0,cy=0,tx=0,ty=0;
 
-  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
-  resize();window.addEventListener('resize',resize);
-
-  function createParticle(){
-    return{x:Math.random()*W,y:Math.random()*H,
-      vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25,
-      r:Math.random()*1.2+0.4,color:COLORS[Math.floor(Math.random()*COLORS.length)],
-      opacity:Math.random()*0.12+0.03}
-  }
-  for(let i=0;i<PARTICLE_COUNT;i++)particles.push(createParticle());
-
-  document.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=!0});
-  document.addEventListener('mouseleave',()=>{mouse.active=!1});
-
-  function animate(){
-    ctx.clearRect(0,0,W,H);
-    // Update
-    for(let p of particles){
-      p.x+=p.vx;p.y+=p.vy;
-      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
-      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
-      // Mouse repulsion
-      if(mouse.active){
-        const dx=mouse.x-p.x,dy=mouse.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<MOUSE_RADIUS){
-          const force=(MOUSE_RADIUS-dist)/MOUSE_RADIUS*0.8;
-          p.vx-=dx/dist*force*0.1;p.vy-=dy/dist*force*0.1;
-        }
-      }
-      // Draw particle
-      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle=p.color+p.opacity+')';ctx.fill();
-    }
-    // Draw connections
-    for(let i=0;i<particles.length;i++){
-      for(let j=i+1;j<particles.length;j++){
-        const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<CONNECT_DIST){
-          const alpha=(1-dist/CONNECT_DIST)*0.06;
-          ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);
-          ctx.lineTo(particles[j].x,particles[j].y);
-          ctx.strokeStyle='rgba(26,26,26,'+alpha+')';
-          ctx.lineWidth=0.4;ctx.stroke();
-        }
-      }
-    }
-    // Mouse glow
-    if(mouse.active){
-      const g=ctx.createRadialGradient(mouse.x,mouse.y,0,mouse.x,mouse.y,60);
-      g.addColorStop(0,'rgba(77,184,184,0.06)');g.addColorStop(1,'rgba(77,184,184,0)');
-      ctx.beginPath();ctx.arc(mouse.x,mouse.y,60,0,Math.PI*2);
-      ctx.fillStyle=g;ctx.fill();
-    }
-    requestAnimationFrame(animate);
-  }
-  animate();
-})();
-
-/* ═════════════════════════════════════════════════════════
-   LAYER 3 — Cinematic Letterbox
-   ═════════════════════════════════════════════════════════ */
-(function(){
-  const root=document.documentElement;
-  let target=0,current=0;
-  function update(){
-    const scrollY=window.scrollY,maxScroll=document.body.scrollHeight-window.innerHeight;
-    target=scrollY<100?40:scrollY>maxScroll-100?48:0;
-    current+=(target-current)*0.08;
-    root.style.setProperty('--bar-width',current+'px');
-    requestAnimationFrame(update);
-  }
-  update();
-})();
-
-/* ═════════════════════════════════════════════════════════
-   LAYER 4 — Custom Cursor
-   ═════════════════════════════════════════════════════════ */
-(function(){
-  const cursor=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
-  let cx=0,cy=0,rx=0,ry=0;
-  const trails=[];
-  for(let i=0;i<15;i++){
-    const t=document.createElement('div');t.className='cursor-trail';
-    document.body.appendChild(t);trails.push({el:t,x:0,y:0});
-  }
-  document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY});
-  // Interactive elements
+  document.addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY});
   document.querySelectorAll('a,.cap-item,.arch-row,.tl-item,.glitch').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{cursor.classList.add('active');ring.classList.add('active')});
-    el.addEventListener('mouseleave',()=>{cursor.classList.remove('active');ring.classList.remove('active')});
+    el.addEventListener('mouseenter',()=>cursor.classList.add('active'));
+    el.addEventListener('mouseleave',()=>cursor.classList.remove('active'));
   });
-  function animate(){
-    rx+=(cx-rx)*0.15;ry+=(cy-ry)*0.15;
-    cursor.style.left=rx+'px';cursor.style.top=ry+'px';
-    ring.style.left=cx+'px';ring.style.top=cy+'px';
-    // Trail
-    for(let i=trails.length-1;i>0;i--){
-      trails[i].x+=(trails[i-1].x-trails[i].x)*0.5;
-      trails[i].y+=(trails[i-1].y-trails[i].y)*0.5;
-      trails[i].el.style.left=trails[i].x+'px';
-      trails[i].el.style.top=trails[i].y+'px';
-      trails[i].el.style.opacity=(1-i/trails.length)*0.08;
-    }
-    trails[0].x=cx;trails[0].y=cy;
-    trails[0].el.style.left=cx+'px';trails[0].el.style.top=cy+'px';
-    requestAnimationFrame(animate);
+
+  function anim(){
+    cx+=(tx-cx)*0.12;cy+=(ty-cy)*0.12;
+    cursor.style.transform=`translate(${cx}px,${cy}px)`;
+    requestAnimationFrame(anim);
   }
-  animate();
-})();
-
-/* ═════════════════════════════════════════════════════════
-   LAYER 3 — Scroll Progress + Reveal + Parallax
-   ═════════════════════════════════════════════════════════ */
-(function(){
-  const progress=document.querySelector('.scroll-progress');
-  window.addEventListener('scroll',()=>{
-    const st=window.scrollY,dh=document.documentElement.scrollHeight-window.innerHeight;
-    progress.style.width=(st/dh*100)+'%';
-  });
-
-  // IntersectionObserver for reveals + dividers
-  const observer=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        if(e.target.classList.contains('reveal'))e.target.classList.add('visible');
-        if(e.target.classList.contains('divider'))e.target.classList.add('drawn');
-      }
-    });
-  },{threshold:0.12,rootMargin:'0px 0px -30px 0px'});
-  document.querySelectorAll('.reveal,.divider').forEach(el=>observer.observe(el));
-
-  // Nav indicator
-  const indicator=document.getElementById('nav-indicator');
-  const sections=['hero','about','capabilities','architecture','experience','contact'];
-  const labels=['HERMES://init','HERMES://identity','HERMES://capabilities','HERMES://architecture','HERMES://timeline','HERMES://contact'];
-  window.addEventListener('scroll',()=>{
-    const st=window.scrollY+window.innerHeight/3;
-    for(let i=sections.length-1;i>=0;i--){
-      const sec=document.getElementById(sections[i]);
-      if(sec&&sec.offsetTop<=st){indicator.textContent=labels[i];break}
-    }
-  });
-})();
-
-/* ═════════════════════════════════════════════════════════
-   LAYER 0 — Hero geometric parallax
-   ═════════════════════════════════════════════════════════ */
-(function(){
-  const geo=document.querySelector('.hero-grain');
-  if(!geo)return;
-  document.addEventListener('mousemove',e=>{
-    const x=(e.clientX/window.innerWidth-0.5)*30;
-    const y=(e.clientY/window.innerHeight-0.5)*30;
-    geo.style.transform=`translateY(-50%) translate(${x}px,${y}px) rotate(${Date.now()/60000*360}deg)`;
-  });
-})();
-
-/* ═════════════════════════════════════════════════════════
-   LAYER 0 — Capability items staggered reveal
-   ═════════════════════════════════════════════════════════ */
-(function(){
-  const caps=document.querySelectorAll('.cap-item');
-  caps.forEach((cap,i)=>{
-    cap.style.transitionDelay=(i*0.06)+'s';
-  });
+  anim();
 })();
 </script>
+
+<!-- ═══════════════════════════════════════════
+   SCROLL REVEAL + DIVIDER DRAW + NOISE FLASH
+   ═══════════════════════════════════════════ -->
+<script>
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      if(e.target.classList.contains('reveal'))e.target.classList.add('visible');
+      if(e.target.classList.contains('divider'))e.target.classList.add('drawn');
+      // Noise flash on section entry
+      if(e.target.tagName==='SECTION'){
+        const flash=document.getElementById('noise-flash');
+        flash.classList.add('active');
+        setTimeout(()=>flash.classList.remove('active'),150);
+      }
+    }
+  });
+},{threshold:0.1,rootMargin:'0px 0px -60px 0px'});
+document.querySelectorAll('.reveal,.divider,section').forEach(el=>observer.observe(el));
+</script>
+
 </body>
 </html>
