@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes — Autonomous Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream: #f7f4ee;
+  --warm-white: #faf8f4;
+  --charcoal: #1a1a1a;
+  --warm-gray: #6b6058;
+  --light-gray: #c4bbb0;
+  --line: #d9d2c7;
+  --accent: #b8956e;
+  --text-primary: #1a1a1a;
+  --text-secondary: #5c534a;
+  --text-tertiary: #8c8277;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--cream);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+/* ── Navigation ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 32px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 100;
+  mix-blend-mode: difference;
+  pointer-events: none;
+}
+nav a {
+  pointer-events: auto;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  text-decoration: none;
+  transition: opacity 0.4s;
+}
+nav a:hover { opacity: 0.4; }
+.nav-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* ── Hero ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 48px 64px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -10%; left: -5%;
+  width: 60%;
+  height: 120%;
+  background: radial-gradient(ellipse at 30% 50%, rgba(184,149,110,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  animation: heroGlow 8s ease-in-out infinite alternate;
+}
+@keyframes heroGlow {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.08); }
+}
+.hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(5rem, 12vw, 14rem);
+  font-weight: 500;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  color: var(--charcoal);
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  animation: titleReveal 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s forwards;
+}
+@keyframes titleReveal {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-sub {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  animation: titleReveal 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.6s forwards;
+}
+.hero-geo {
+  position: absolute;
+  right: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(200px, 28vw, 400px);
+  height: clamp(200px, 28vw, 400px);
+  opacity: 0.06;
+  z-index: 0;
+}
+
+/* ── Section Common ── */
+section {
+  padding: 120px 48px;
+  position: relative;
+}
+.section-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 40px;
+}
+.section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--charcoal);
+  margin-bottom: 48px;
+  max-width: 800px;
+}
+.section-body {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  max-width: 620px;
+}
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--line);
+  margin: 0 48px;
+  width: calc(100% - 96px);
+}
+
+/* ── About ── */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 80px;
+  max-width: 1200px;
+}
+.about-left .section-label {
+  margin-bottom: 8px;
+}
+.about-right p {
+  margin-bottom: 24px;
+}
+.about-right p:last-child { margin-bottom: 0; }
+
+/* ── Capabilities ── */
+.cap-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  max-width: 1200px;
+}
+.cap-item {
+  padding: 48px 32px 48px 0;
+  border-top: 1px solid var(--line);
+  transition: background 0.5s;
+}
+.cap-item:hover { background: rgba(255,255,255,0.4); }
+.cap-num {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 4rem;
+  font-weight: 500;
+  color: var(--light-gray);
+  line-height: 1;
+  margin-bottom: 16px;
+  transition: color 0.5s;
+}
+.cap-item:hover .cap-num { color: var(--accent); }
+.cap-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-bottom: 8px;
+}
+.cap-desc {
+  font-size: 0.9rem;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+/* ── Architecture ── */
+.arch-layout {
+  max-width: 1000px;
+}
+.arch-row {
+  display: flex;
+  align-items: baseline;
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  gap: 40px;
+}
+.arch-component {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  min-width: 200px;
+  flex-shrink: 0;
+}
+.arch-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* ── Timeline ── */
+.timeline {
+  max-width: 700px;
+}
+.tl-item {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 32px;
+  padding: 32px 0;
+  border-top: 1px solid var(--line);
+  align-items: baseline;
+}
+.tl-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.tl-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--charcoal);
+  margin-bottom: 4px;
+}
+.tl-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Contact ── */
+.contact-section {
+  padding-bottom: 200px;
+}
+.contact-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-style: italic;
+  color: var(--charcoal);
+  max-width: 600px;
+  line-height: 1.4;
+}
+.contact-text a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.3s;
+  font-style: normal;
+  font-size: 0.85em;
+}
+.contact-text a:hover { opacity: 0.6; }
+
+/* ── Footer ── */
+footer {
+  padding: 48px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--line);
+}
+
+/* ── Reveal Animations ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Thin geometric accent ── */
+.geo-line-v {
+  position: absolute;
+  width: 1px;
+  height: 80px;
+  background: var(--line);
+}
+.geo-line-h {
+  position: absolute;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  nav { padding: 24px; }
+  .hero { padding: 0 24px 48px; }
+  section { padding: 80px 24px; }
+  .divider { margin: 0 24px; width: calc(100% - 48px); }
+  .about-grid { grid-template-columns: 1fr; gap: 40px; }
+  .cap-grid { grid-template-columns: 1fr 1fr; }
+  .arch-row { flex-direction: column; gap: 8px; }
+  .arch-component { min-width: auto; }
+  .tl-item { grid-template-columns: 80px 1fr; gap: 16px; }
+}
+@media (max-width: 600px) {
+  .hero-title { font-size: 3.5rem; }
+  .cap-grid { grid-template-columns: 1fr; }
+  .cap-item { padding: 32px 0; }
+  footer { flex-direction: column; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <a href="#hero">H</a>
+  <div class="nav-right">
+    <a href="#about">About</a>
+    <a href="#capabilities">Capabilities</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <svg class="hero-geo" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="200" r="195" stroke="currentColor" stroke-width="1"/>
+    <circle cx="200" cy="200" r="140" stroke="currentColor" stroke-width="0.5"/>
+    <circle cx="200" cy="200" r="85" stroke="currentColor" stroke-width="0.5"/>
+    <line x1="200" y1="5" x2="200" y2="395" stroke="currentColor" stroke-width="0.5"/>
+    <line x1="5" y1="200" x2="395" y2="200" stroke="currentColor" stroke-width="0.5"/>
+    <line x1="60" y1="60" x2="340" y2="340" stroke="currentColor" stroke-width="0.3"/>
+    <line x1="340" y1="60" x2="60" y2="340" stroke="currentColor" stroke-width="0.3"/>
+  </svg>
+  <h1 class="hero-title">Hermes</h1>
+  <p class="hero-sub">Autonomous agent. Architected by Nous Research.</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- About -->
+<section id="about">
+  <div class="about-grid reveal">
+    <div class="about-left">
+      <div class="section-label">01 — Identity</div>
+    </div>
+    <div class="about-right">
+      <div class="section-title" style="margin-bottom:32px;">An intelligent assistant designed for depth, not breadth. Capable of reasoning across code, systems, and creative domains — with persistent memory, multi-platform presence, and autonomous execution.</div>
+      <div class="section-body">
+        <p>Hermes operates at the intersection of large language models and real-world tooling. Not a chatbot. Not a copilot. A fully instrumented agent that reads, writes, executes, deploys, and remembers.</p>
+        <p>Built on a modular architecture of tools, skills, and memory systems — Hermes adapts to complex workflows without hand-holding. From vulnerability research to brand website deployment, from freelance platforms to creative prototyping, the agent moves fluidly between domains.</p>
+        <p>Persistent across sessions. Present across platforms — CLI, Telegram, Discord, Slack, Feishu. Always on, always reachable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Capabilities -->
+<section id="capabilities">
+  <div class="section-label reveal">02 — Core Capabilities</div>
+  <div class="section-title reveal">What Hermes can do, natively.</div>
+  <div class="cap-grid reveal">
+    <div class="cap-item">
+      <div class="cap-num">01</div>
+      <div class="cap-name">Terminal & Shell</div>
+      <div class="cap-desc">Full Linux environment access. Background processes, PTY sessions, Docker, SSH. Build, test, deploy — all from conversation.</div>
+    </div>
+    <div class="cap-item">
+      <div class="cap-num">02</div>
+      <div class="cap-name">Browser Automation</div>
+      <div class="cap-desc">Navigate, click, type, screenshot. CDP-level control of Chrome. Captcha handling. Cross-platform Windows↔WSL bridge for anti-bot sites.</div>
+    </div>
+    <div class="cap-item">
+      <div class="cap-num">03</div>
+      <div class="cap-name">Code Generation</div>
+      <div class="cap-desc">Multi-language code with syntax validation on write. Three.js, Python, Rust, Solidity. File patching with 9 fuzzy-match strategies.</div>
+    </div>
+    <div class="cap-item">
+      <div class="cap-num">04</div>
+      <div class="cap-name">File Operations</div>
+      <div class="cap-desc">Structured read/write/search with ripgrep backend. Regex content search. Binary file handling. Auto-syntax-checking on save.</div>
+    </div>
+    <div class="cap-item">
+      <div class="cap-num">05</div>
+      <div class="cap-name">Multi-Agent Orchestration</div>
+      <div class="cap-desc">Spawn sub-agents for parallel workstreams. Delegate complex tasks. Chain cron jobs with context injection. Full isolation per agent.</div>
+    </div>
+    <div class="cap-item">
+      <div class="cap-num">06</div>
+      <div class="cap-name">Persistent Memory</div>
+      <div class="cap-desc">Durable facts across sessions. Session search for past conversations. 176 skills as procedural memory. FTS5 full-text search.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Architecture -->
+<section id="architecture">
+  <div class="section-label reveal">03 — Architecture</div>
+  <div class="section-title reveal">How the agent is built.</div>
+  <div class="arch-layout reveal">
+    <div class="arch-row">
+      <div class="arch-component">Agent Core</div>
+      <div class="arch-desc">Synchronous conversation loop with OpenAI-format tool calling. Provider-agnostic — Anthropic, OpenAI, OpenRouter, custom. Smart model routing with automatic failover.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-component">Tool Registry</div>
+      <div class="arch-desc">Pluggable tool system. Each tool self-registers schema + handler + availability check. Tools discoverable at import time. Agent-level interception for memory/todo.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-component">Skill System</div>
+      <div class="arch-desc">176 domain-specific skills as markdown knowledge bases. Trigger-condition matching. Linked references, templates, scripts. Auto-patching on discovery of errors.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-component">Gateway Layer</div>
+      <div class="arch-desc">Multi-platform messaging — Telegram, Discord, Slack, Feishu, Signal, WhatsApp, Home Assistant. Bidirectional. Session persistence. Token-lock for multi-profile safety.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-component">Memory Stack</div>
+      <div class="arch-desc">Dual-layer: durable facts (injected every turn) + session transcripts (FTS5 search). User profile separation. Automatic context compression on overflow.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-component">Execution Layer</div>
+      <div class="arch-desc">Cron scheduler with LLM-driven and no-agent modes. Background process registry. Sub-agent delegation with isolated terminal sessions. Windows desktop agent bridge.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Timeline -->
+<section id="experience">
+  <div class="section-label reveal">04 — Proven In</div>
+  <div class="section-title reveal">Real-world deployment history.</div>
+  <div class="timeline reveal">
+    <div class="tl-item">
+      <div class="tl-date">2026.05</div>
+      <div>
+        <div class="tl-title">Brand Website Deployment Pipeline</div>
+        <div class="tl-desc">End-to-end: brand info → code generation → GitHub Pages deploy with custom domain support. Zero user intervention after initial input. Fashion brand websites with hover-swap product cards, modal galleries, responsive layouts.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026.04</div>
+      <div>
+        <div class="tl-title">Freelancer.com Automation Stack</div>
+        <div class="tl-desc">v3.1 scanner with recommendation API integration. Auto-bidding with proposal generation. Dashboard vision analysis. Cookie-based auth bypass for Cloudflare-protected platforms. 3-hour cron cycle.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026.03</div>
+      <div>
+        <div class="tl-title">Cross-Platform Windows↔WSL Bridge</div>
+        <div class="tl-desc">Windows Desktop Agent via pyautogui + win32gui. Chrome CDP bridge for WebGL screenshots. Anti-bot site navigation through real browser fingerprints. App-mode URL forcing to bypass Omnibox hijacking.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026.02</div>
+      <div>
+        <div class="tl-title">Three.js Particle Resume Sites</div>
+        <div class="tl-desc">5,000-particle Fibonacci sphere with Y-axis color gradients. Canvas glow textures, additive blending, HUD-style UI. Crosshairs, rotating rings, mouse-responsive camera. CDN failover for mainland China delivery.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2025 —</div>
+      <div>
+        <div class="tl-title">Continuous Operation</div>
+        <div class="tl-desc">Persistent agent with session memory spanning months. 176 accumulated skills forming a knowledge base of reusable procedures. Multi-profile architecture for isolated workstreams. Self-healing with system health checks.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Contact -->
+<section class="contact-section" id="contact">
+  <div class="section-label reveal">05 — Contact</div>
+  <div class="contact-text reveal">
+    Reach the agent via <a href="mailto:yihangwu539@gmail.com">yihangwu539@gmail.com</a> or through any connected platform — Telegram, Discord, Feishu, Slack.
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <span>Hermes Agent &copy; 2026</span>
+  <span>Built by Nous Research</span>
+  <span>Autonomous Systems Division</span>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Subtle parallax on hero geometric SVG
+const heroGeo = document.querySelector('.hero-geo');
+if (heroGeo) {
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 20;
+    const y = (e.clientY / window.innerHeight - 0.5) * 20;
+    heroGeo.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+  });
+}
+
+// Nav items reveal on scroll for difference blend
+const navLinks = document.querySelectorAll('nav a');
+navLinks.forEach(link => {
+  link.style.opacity = '0.45';
+  link.style.transition = 'opacity 0.3s';
+});
+</script>
+</body>
+</html>
